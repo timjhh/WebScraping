@@ -5,22 +5,31 @@
 const begin = "http://www.philosophizethis.org/sitemap.xml";
 
 
-(async () => {
+function query() {
+	
+	(async () => {
 	try {
 		const result = await getPageData(begin); // Get the sitemap's XML data
 		const resultXML = await parseXML(result); // Parse the JSON into an XML document
 		const locdata = await parseLocData(resultXML); // Get URL list for transcript links
 		const transcripts = await getPageData(locdata[0]);
+		await appendTranscripts(locdata);
 		const tsc = await parseHTML(transcripts);
 		const transcript = await parseTranscriptData(tsc);
 		await appendTranscript(transcript);
 		const words = await getFrequency(transcript);
-		await createGraph(words);
+
+		$("#query").attr("disabled", "disabled");
+
+		await createGraph(words);	
 
 	} catch(err) {
 		console.log(err);
 	}
 	}) ();
+
+}
+
 
 
 
@@ -60,17 +69,38 @@ function parseTranscriptData(data) {
 	});
 	return collection;
 }
+/*
+	Create a transcript box
+*/
 function appendTranscript(data) {
+	
 	d3.select("#transcript")
 		.selectAll("p")
 		.data(data)
 		.enter().append("p")
 		.text(function(d) { return d; });
 }
+/*
+	Create a query box for all transcripts
+*/
+function appendTranscripts(data) {
+
+	d3.select("#tbox")
+		.selectAll("a")
+		.data(data)
+		.enter().append("a")
+		.attr("href", function(d) { return d; })
+		.text(function(d) { 
+			var spl = d.split("/");
+			var ename = spl[spl.length-1];
+			return ename + " "; });
+
+}
+
 function getFrequency(data) {
 	words = [{
-		"word",
-		"frequency"
+		"word": "",
+		"frequency": 0
 	}];
 	data.forEach(function(d) {
 
@@ -81,7 +111,6 @@ function getFrequency(data) {
 		//var f1 = d.replace(/[.,\/#"!?$%\^&\*;:{}=\-_`~()]/g,'');
 		//var f2 = f1.replace(/\.{3}/, " ");
 		var spl = formatted.split(" ").filter(Boolean);
-		console.log(formatted);
 
 		for(var i=0;i<spl.length;i++) {
 			var temp = spl[i].toLowerCase();
@@ -146,7 +175,5 @@ function createGraph(data) {
 	  .attr("y", function(d) { return y(d); })
 	  .attr("width", function(d) { return x(d.values()); })
 	  .attr("height", y.bandwidth() )
-	  .attr("fill", "#69b3a2")		
-
-
+	  .attr("fill", "#69b3a2")
 }
