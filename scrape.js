@@ -4,7 +4,6 @@
 
 const begin = "http://www.philosophizethis.org/sitemap.xml";
 
-
 function query() {
 	
 	(async () => {
@@ -12,16 +11,30 @@ function query() {
 		const result = await getPageData(begin); // Get the sitemap's XML data
 		const resultXML = await parseXML(result); // Parse the JSON into an XML document
 		const locdata = await parseLocData(resultXML); // Get URL list for transcript links
-		const transcripts = await getPageData(locdata[0]);
-		await appendTranscripts(locdata);
-		const tsc = await parseHTML(transcripts);
-		const transcript = await parseTranscriptData(tsc);
-		await appendTranscript(transcript);
-		const words = await getFrequency(transcript);
+		await appendTranscripts(locdata); // Create all transcripts in selection box
+
+	} catch(err) {
+		console.log(err);
+	}
+	}) ();
+$("#query").attr("disabled", "disabled");
+$("#qSubmit").attr("disabled", null);
+}
+function tQuery() {
+	
+	(async () => {
+	try {
+		const selected = await $("#tSelect").find("option:selected").map(function() { return $(this).attr("href"); }).get(); // Get all selected transcripts
+		const pages = await Promise.all(selected.map(d => getPageData(d)));
+		const tsc = await Promise.all(pages.map(d => parseHTML(d)));
+		const transcripts = await Promise.all(tsc.map(d => parseTranscriptData(d)));
+
+		const frequency = await getFrequencies(transcripts);
+		await appendFrequency(frequency);
 
 		$("#query").attr("disabled", "disabled");
 
-		await createGraph(words);	
+		await createGraph(frequency);	
 
 	} catch(err) {
 		console.log(err);
@@ -81,55 +94,76 @@ function appendTranscript(data) {
 		.text(function(d) { return d; });
 }
 /*
+	Create a frequency
+*/
+function appendFrequency(data) {
+
+	var container = d3.select("#transcript");
+
+	d3.entries(data).forEach(d => {
+		container.append("p")
+		.text(d.key + " -> " + d.value);
+	});
+	/*
+	d3.select("#transcript")
+		.selectAll("p")
+		.data(data)
+		.enter().append("p")
+		.text(function(d) {
+			console.log(Object.entries(d));
+			return d; 
+		});
+	*/
+}
+/*
 	Create a query box for all transcripts
 */
 function appendTranscripts(data) {
 
-	d3.select("#tbox")
-		.selectAll("a")
+	d3.select("#tSelect")
+		.selectAll("option")
 		.data(data)
-		.enter().append("a")
+		.enter().append("option")
 		.attr("href", function(d) { return d; })
 		.text(function(d) { 
 			var spl = d.split("/");
 			var ename = spl[spl.length-1];
-			return ename + " "; });
+			return ename; });
 
 }
+function getFrequencies(data) {
+	var words = {};
+	data.forEach(function(tsc) {
+		tsc.forEach(function(d) {
+			var formatted = d
+			.replace(/[.]{3}/g, " ")
+			.replace(/[\u2026]/g, " ") // remove the triple ellipse unicode symbol smh stephen why
+			.replace(/[.,\/"#!?$%\^&\*\[\];:{}=\-_~()]/g,'') // remove random formatting
+			.replace(/[0-9]/g, ''); // remove all numbers
+			//var f1 = d.replace(/[.,\/#"!?$%\^&\*;:{}=\-_`~()]/g,'');
+			//var f2 = f1.replace(/\.{3}/, " ");
+			var spl = formatted.split(" ").filter(Boolean); // Filter for non-null words
 
-function getFrequency(data) {
-	words = [{
-		"word": "",
-		"frequency": 0
-	}];
-	data.forEach(function(d) {
-
-		var formatted = d
-		.replace(/\u2026/g, ' ') // remove the triple ellipse unicode symbol smh stephen why
-		.replace(/[.,\/#"!?"$%\^&\*;:{}=\-_`~()]/g,'') // remove random formatting
-		.replace(/[0-9]/g, ''); // remove all numbers
-		//var f1 = d.replace(/[.,\/#"!?$%\^&\*;:{}=\-_`~()]/g,'');
-		//var f2 = f1.replace(/\.{3}/, " ");
-		var spl = formatted.split(" ").filter(Boolean);
-
-		for(var i=0;i<spl.length;i++) {
-			var temp = spl[i].toLowerCase();
-			if(words[temp]) {
-				words[temp] = words[temp] + 1;
+			for(var i=0;i<spl.length;i++) {
+				var temp = spl[i].replace(/[" ]/g, '').toLowerCase();
+				if(words[temp]) {
+					words[temp] = words[temp] + 1;
+				}
+				else {
+					words[temp] = 1;
+				}
 			}
-			else {
-				words[temp] = 1;
-			}
-		}
+		});
 	});
-	
 	return words;
 }
-function createGraph(data) {
+function createGraph(datum) {
+
+	var data = d3.entries(datum);
 
 	var sortable = [];
 	for(var tmp in data) {
-		sortable.push([tmp, words[tmp]]);
+		sortable.push([tmp, data[tmp]]);
 	}
 	sortable.sort((a,b) => b[1] - a[1]);
 	var max = sortable[0][1];
@@ -151,6 +185,7 @@ function createGraph(data) {
     var x = d3.scaleLinear()
 	.domain([0, max])
 	.range([0, width]);
+	
 	svg.append("g")
 		.attr("transform", "translate(0," + height + ")")
 		.call(d3.axisBottom(x))
@@ -161,19 +196,19 @@ function createGraph(data) {
 	// Y axis
 	var y = d3.scaleBand()
 	  .range([ 0, height ])
-	  .domain(data.map(function(d) { return d; }))
+	  .domain(data.map(function(d) { return d.key; }))
 	  .padding(.1);
 	svg.append("g")
 	  .call(d3.axisLeft(y))
 
 	//Bars
 	svg.selectAll("myRect")
-	  .data(datum)
+	  .data(data)
 	  .enter()
 	  .append("rect")
 	  .attr("x", x(0) )
 	  .attr("y", function(d) { return y(d); })
-	  .attr("width", function(d) { return x(d.values()); })
+	  .attr("width", function(d) { return x(d.value); })
 	  .attr("height", y.bandwidth() )
-	  .attr("fill", "#69b3a2")
+	  .attr("fill", "#69b3a2");
 }

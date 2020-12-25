@@ -6,16 +6,22 @@
 	}
 	.container {
 		max-width: 100% !important;
-		height: 100%;
+		height: 100vh !important;
 	}
 	#tbox, #transcript {
-		border: 1px solid black;
 		clear: both;
 		display: block;	
 		float: left;
 	}
+	p {
+		white-space: pre-line;
+		margin-bottom: : none !important;
+	}
 	a {
 		display: inline-block;
+	}
+	select {
+		height: 90vh !important;
 	}
 </style>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
@@ -37,13 +43,17 @@
 			</div>
 			<div class="col-sm-3 col-md-3 col-lg-3">
 					<div class="overflow-auto" id="tbox">
-						<h1>Transcripts</h1>
+						<label for="tSelect">Transcripts</label>
+						<button for="tSelect" id="qSubmit" onclick="tQuery()" disabled>Query Transcripts</button>
+						<select multiple class="form-control" id="tSelect">
+
+						</select>
 					
 					</div>
 			</div>
 			<div class="col-sm-3 col-md-3 col-lg-3">
 					<div class="overflow-auto" id="transcript">
-						<h1>Transcript</h1>
+						<h1>Frequency</h1>
 					
 					</div>
 			</div>
