@@ -39,8 +39,16 @@ function query() {
 	try {
 		const result = await getPageData(begin); // Get the sitemap's XML data
 		const resultXML = await parseXML(result); // Parse the JSON into an XML document
-		const locdata = await parseLocData(resultXML); // Get URL list for transcript links
-		await appendTranscripts(locdata); // Create all transcripts in selection box
+		
+		const elinks = await getEpisodes(resultXML); // Get URL list for episode links
+		const epages = await Promise.all(elinks.map(d => getPageData(d)));
+		const edata = await Promise.all(epages.map(d => parseHTML(d)));
+		const titles = await getEpisodeTitles(edata); // Create array for all episode titles by parsing HTML
+
+		const locdata = await getTranscripts(resultXML); // Get URL list for transcript links
+		
+		const episodes = await associateEpisodes(titles, locdata); // Associate each transcript link with a title to store
+		await appendTranscripts(episodes); // Create all transcripts in selection box
 
 	} catch(err) {
 		console.log(err);
@@ -59,6 +67,7 @@ function tQuery() {
 		const transcripts = await Promise.all(tsc.map(d => parseTranscriptData(d)));
 
 		const frequency = await getFrequencies(transcripts);
+		const sorted = await sortFrequencies(frequency);
 		const stats = await getStats(frequency);
 		await appendFrequency(frequency);
 
@@ -93,7 +102,9 @@ function parseXML(data) {
 function parseHTML(data) {
 	return $($.parseHTML(data.contents));
 }
-function parseLocData(data) {
+// Gets all transcript titles from XML sitemap
+// data MUST be in the form of an XML webpage object
+function getTranscripts(data) {
     var links = Array.from(data.getElementsByTagName("loc")).filter(d => d != null && d.textContent.includes("transcript")); // Create an array of each loc element, and filter for all transcripts
 
     var tsc = []; // Create array of all transcript links
@@ -101,6 +112,63 @@ function parseLocData(data) {
     	tsc.push(d.textContent);
     });
     return tsc;
+}
+// Gets all episode links from XML sitemap
+// data MUST be in the form of an XML webpage object
+function getEpisodes(data) {
+    var links = Array.from(data.getElementsByTagName("loc")).filter(d => d != null && !d.textContent.includes("transcript"));
+
+    var tsc = []; // Create array of all episode links
+    links.forEach(function(d) {
+    	tsc.push(d.textContent);
+    });
+    return tsc;
+}
+// Gets all episode titles from an HTML webpage object
+// data MUST be in the form of an HTML webpage object
+// Returns an array in the format [episode #, title]
+function getEpisodeTitles(data) {
+	
+	var titles = [];
+	var ttls = data.map(d => d.find('h1').text().toLowerCase()).filter(d => d.includes("episode"));
+
+	ttls.forEach(function(d) {
+		var title = d.split("-");
+		var description = title.slice(1).join("").trim();
+		if(description.length < 100 && description != "") {
+		 titles.push([parseInt(title[0].match(/[1-9]\d*|0\d+/g)[0]), description]);
+		}
+		
+	});
+	/*data.forEach(function(d) {
+		var ttls = d.find('h1').text().toLowerCase();
+		var title = ttls.filter(d => d.includes("episode")).split("-");
+		titles.push([title[0].match(/[0-9]/g), title[1]]);
+	});*/
+	return titles;
+}
+/*
+	Returns an array in the format [Episode Title, Transcript Link], given:
+	-an array of titles in the format [Episode #, Episode Title]
+	-an array of transcript links
+	This is accomplished by:
+	-iterating through all transcript links
+	-regular expression matching any number 0-9 from the link
+	-matching this with a number from the titles array
+	-pushing the episode title, link to an array
+	-returning the array 
+*/
+function associateEpisodes(titles, links) {
+	console.log(titles);
+	console.log("----");
+	console.log(links);
+	links.forEach(function(d) {
+		var num = d.match(/[1-9]\d*|0\d+/g)[0];
+		if(titles.contains(num)) {
+
+		}
+	});
+
 }
 function parseTranscriptData(data) {
 	
@@ -123,8 +191,22 @@ function appendTranscript(data) {
 		.enter().append("p")
 		.text(function(d) { return d; });
 }
+function appendTranscripts(data) {
+
+	d3.select("#tSelect")
+		.selectAll("option")
+		.data(data)
+		.enter().append("option")
+		.attr("href", function(d) { return d; })
+		.text(function(d) { 
+			var spl = d.split("/");
+			var ename = spl[spl.length-1];
+			return ename; 
+		});
+
+}
 /*
-	Create a frequency
+	Create a frequency box to show descending word frequencies
 */
 function appendFrequency(data) {
 
@@ -148,23 +230,12 @@ function appendFrequency(data) {
 		});
 	*/
 }
+
+
 /*
 	Create a query box for all transcripts
 */
-function appendTranscripts(data) {
 
-	d3.select("#tSelect")
-		.selectAll("option")
-		.data(data)
-		.enter().append("option")
-		.attr("href", function(d) { return d; })
-		.text(function(d) { 
-			var spl = d.split("/");
-			var ename = spl[spl.length-1];
-			return ename; 
-		});
-
-}
 function getFrequencies(data) {
 	var words = {};
 	data.forEach(function(tsc) {
@@ -189,6 +260,9 @@ function getFrequencies(data) {
 	var filtered = Object.fromEntries(Object.entries(words).filter(([k,v]) => v>1)); // Return all entries witih more than one occurrance
 	return filtered;
 }
+function sortFrequencies(data) {
+
+}
 function getStats(datum) {
 	var data = d3.entries(datum);
 
@@ -210,13 +284,12 @@ function createGraph(datum) {
 
 	var data = d3.entries(datum);
 
-	/*
+
 	var sortable = [];
 	for(var tmp in data) {
 		sortable.push([tmp, data[tmp]]);
 	}
 	sortable.sort((a,b) => b[1] - a[1]);
-	*/
 
 	var max = sortable[0][1];
 
