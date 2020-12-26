@@ -59,6 +59,7 @@ function tQuery() {
 		const transcripts = await Promise.all(tsc.map(d => parseTranscriptData(d)));
 
 		const frequency = await getFrequencies(transcripts);
+		const stats = await getStats(frequency);
 		await appendFrequency(frequency);
 
 		$("#query").attr("disabled", "disabled");
@@ -128,8 +129,11 @@ function appendTranscript(data) {
 function appendFrequency(data) {
 
 	var container = d3.select("#transcript");
+	var sorted = d3.entries(data).sort(function(f, s) {
+		return s.value - f.value;
+	});
 
-	d3.entries(data).forEach(d => {
+	sorted.forEach(d => {
 		container.append("p")
 		.text(d.key + " -> " + d.value);
 	});
@@ -185,15 +189,35 @@ function getFrequencies(data) {
 	var filtered = Object.fromEntries(Object.entries(words).filter(([k,v]) => v>1)); // Return all entries witih more than one occurrance
 	return filtered;
 }
+function getStats(datum) {
+	var data = d3.entries(datum);
+
+	var mean = d3.mean(data, d => d.value);
+	var median = d3.median(data, d => d.value);
+	var stdev = d3.deviation(data, d => d.value);
+	var max = d3.max(data, d => d.value);
+	var min = d3.min(data, d => d.value);
+	console.log("stdev " + stdev);
+	console.log("mean " + mean);
+	console.log("median " + median);
+	console.log("max " + max);
+	console.log("min " + min);
+	console.log("25th quantile " + d3.quantile(data, .25, d => d.value));
+	console.log("50th quantile " + d3.quantile(data, .5, d => d.value));
+	console.log("75th quantile " + d3.quantile(data, .75, d => d.value));
+} 
 function createGraph(datum) {
 
 	var data = d3.entries(datum);
 
+	/*
 	var sortable = [];
 	for(var tmp in data) {
 		sortable.push([tmp, data[tmp]]);
 	}
 	sortable.sort((a,b) => b[1] - a[1]);
+	*/
+
 	var max = sortable[0][1];
 
 
