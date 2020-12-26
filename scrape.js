@@ -126,17 +126,17 @@ function getEpisodes(data) {
 }
 // Gets all episode titles from an HTML webpage object
 // data MUST be in the form of an HTML webpage object
-// Returns an array in the format [episode #, title]
+// Returns a dictionary in the format of episode # -> description
 function getEpisodeTitles(data) {
 	
-	var titles = [];
-	var ttls = data.map(d => d.find('h1').text().toLowerCase()).filter(d => d.includes("episode"));
+	var titles = {};
+	var ttls = data.map(d => d.find('h1').text()).filter(d => d.toLowerCase().includes("episode")); // Find the episode description(usually the only h1 tag on the page)
 
 	ttls.forEach(function(d) {
 		var title = d.split("-");
-		var description = title.slice(1).join("").trim();
-		if(description.length < 100 && description != "") {
-		 titles.push([parseInt(title[0].match(/[1-9]\d*|0\d+/g)[0]), description]);
+		var description = title.slice(1).join("").trim(); // Include some titles with extra hyphens in their description, trim the whitespace too!
+		if(description.length < 100 && description != "") { // Filters out ??? big descriptions ??? just don't take it out
+		 titles[parseInt(title[0].match(/[1-9]\d*|0\d+/g)[0])] = description; // index a regex matching of all numbers followed by the description
 		}
 		
 	});
@@ -146,6 +146,28 @@ function getEpisodeTitles(data) {
 		titles.push([title[0].match(/[0-9]/g), title[1]]);
 	});*/
 	return titles;
+}
+function parseTranscriptData(data) {
+	
+	var collection = [];
+	var txt = data.find('p').each(function() {
+		if($(this).text().length > 50) {
+			collection.push($(this).text());
+		}
+	});
+	return collection;
+}
+/*
+	Create a transcript box and append its script text, given:
+	data - an array of strings containing the transcript
+*/
+function appendTranscript(data) {
+	
+	d3.select("#transcript")
+		.selectAll("p")
+		.data(data)
+		.enter().append("p")
+		.text(function(d) { return d; });
 }
 /*
 	Returns an array in the format [Episode Title, Transcript Link], given:
@@ -159,49 +181,41 @@ function getEpisodeTitles(data) {
 	-returning the array 
 */
 function associateEpisodes(titles, links) {
-	console.log(titles);
-	console.log("----");
-	console.log(links);
+	var episodes = {}; // dictionary in the intended format of description -> link
 	links.forEach(function(d) {
-		var num = d.match(/[1-9]\d*|0\d+/g)[0];
-		if(titles.contains(num)) {
-
+		if(!d.includes("episode")) {
+			var spl = d.split("/");
+			var ename = spl[spl.length-1];
+			episodes[d] = ename;
+		} else {
+			var num = parseInt(d.match(/[1-9]\d*|0\d+/g));
+			if(titles[num]) {
+				episodes[d] = num + " ---> " + titles[num];
+			}
 		}
+		
 	});
+	console.log(episodes);
 
-}
-function parseTranscriptData(data) {
-	
-	var collection = [];
-	var txt = data.find('p').each(function() {
-		if($(this).text().length > 50) {
-			collection.push($(this).text());
-		}
+	var sorted = d3.entries(episodes).sort(function(f, s) {
+		return parseInt(f.value.split(" ")[0]) - parseInt(s.value.split(" ")[0]);
 	});
-	return collection;
+	console.log(sorted);
+	return sorted;
 }
-/*
-	Create a transcript box
-*/
-function appendTranscript(data) {
-	
-	d3.select("#transcript")
-		.selectAll("p")
-		.data(data)
-		.enter().append("p")
-		.text(function(d) { return d; });
-}
-function appendTranscripts(data) {
+function appendTranscripts(datum) {
 
+	var data = d3.entries(datum);
 	d3.select("#tSelect")
 		.selectAll("option")
 		.data(data)
 		.enter().append("option")
-		.attr("href", function(d) { return d; })
+		.attr("href", function(d) { return d.key; })
 		.text(function(d) { 
-			var spl = d.split("/");
-			var ename = spl[spl.length-1];
-			return ename; 
+			return d.value;
+			//var spl = d.split("/");
+			//var ename = spl[spl.length-1];
+			//return ename; 
 		});
 
 }
@@ -260,7 +274,7 @@ function getFrequencies(data) {
 	var filtered = Object.fromEntries(Object.entries(words).filter(([k,v]) => v>1)); // Return all entries witih more than one occurrance
 	return filtered;
 }
-function sortFrequencies(data) {
+function sortByValue(data) {
 
 }
 function getStats(datum) {
