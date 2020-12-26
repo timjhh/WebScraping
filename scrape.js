@@ -1,8 +1,37 @@
-//https://www.philosophizethis.org/sitemap.xml
-//$.ajax({ url: 'http://www.philosophizethis.org/ + name, function(response) {  console.log(response);});
-
 
 const begin = "http://www.philosophizethis.org/sitemap.xml";
+
+
+const stopWords = [ // Words to disclude from word count - taken from microsoft PowerBI-Visuals-WordCloud
+    "a", "amazon", "about", "above", "above", "across", "after", "afterwards", "again", "against", "all", "almost", 
+    "alone", "along", "already", "also","although","always","am","among", "amongst", "amoungst", "amount",  
+    "an", "and", "another", "any","anyhow","anyone","anything","anyway", "anywhere", "are", "around", "as",  
+    "at", "back","be","became", "because","become","becomes", "becoming", "been", "before", "beforehand", "behind", 
+    "being", "below", "beside", "besides", "between", "beyond", "bill", "both", "bottom","but", "by", "call", 
+    "can", "cannot", "cant", "co", "con", "could", "couldnt", "cry", "de", "describe", "detail", "do", "done", 
+    "down", "due", "during", "each", "eg", "eight", "either", "eleven","else", "elsewhere", "empty", "enough", "episode", 
+    "etc", "even", "ever", "every", "everyone", "everything", "everywhere", "except", "few", "fifteen", "fify", 
+    "fill", "find", "fire", "first", "five", "for", "former", "formerly", "forty", "found", "four", "from", 
+    "front", "full", "further", "get", "give", "go", "going", "had", "has", "hasnt", "have", "he", "hello", "hence", "her", 
+    "here", "hereafter", "hereby", "herein", "hereupon", "hers", "herself", "him", "himself", "his", "how",
+    "however", "hundred", "i", "ie", "if", "i'll", "in", "inc", "indeed", "interest", "into", "is", "it", "its", "it's", "itself",
+    "keep", "last", "latter", "latterly", "least", "less", "let's", "ltd", "made", "many", "may", "me", "meanwhile", 
+    "might", "mill", "mine", "more", "moreover", "most", "mostly", "move", "much", "must", "my", "myself", 
+    "name", "namely", "neither", "never", "nevertheless", "next", "nine", "no", "nobody", "none", "noone", 
+    "nor", "not", "nothing", "now", "nowhere", "of", "off", "often", "on", "once", "one", "only", "onto", "or", 
+    "other", "others", "otherwise", "our", "ours", "ourselves", "out", "over", "own","part", "per", "perhaps", 
+    "please", "put", "rather", "re", "same", "see", "seem", "seemed", "seeming", "seems", "serious", "several", 
+    "she", "should", "show", "side", "since", "sincere", "six", "sixty", "so", "some", "somehow", "someone", 
+    "something", "sometime", "sometimes", "somewhere", "still", "such", "system", "take", "ten", "than", 
+    "that", "the", "their", "them", "themselves", "then", "thence", "there", "thereafter", "thereby", "therefore", 
+    "therein", "thereupon", "these", "they", "thick", "thin", "third", "this", "those", "though", "three", 
+    "through", "throughout", "thru", "thus", "to", "together", "too", "top", "toward", "towards", "transcript", "twelve", 
+    "twenty", "two", "un", "under", "until", "up", "upon", "us", "very", "via", "was", "we", "well", "were", 
+    "what", "whatever", "when", "whence", "whenever", "where", "whereafter", "whereas", "whereby", "wherein",
+    "whereupon", "wherever", "whether", "which", "while", "whither", "who", "whoever", "whole", "whom", "whose", 
+    "why", "will", "with", "within", "without", "would", "year", "years", "yet", "you", "your", "you're", "yours", "yourself", "yourselves", "the", "stephen", "west",
+    "sponsor", "i'm"
+    ];
 
 function query() {
 	
@@ -138,15 +167,12 @@ function getFrequencies(data) {
 		tsc.forEach(function(d) {
 			var formatted = d
 			.replace(/[.]{3}/g, " ")
-			.replace(/[\u2026]/g, " ") // remove the triple ellipse unicode symbol smh stephen why
+			.replace(/[\u2026]/g, " ") // remove the triple ellipse unicode symbol smh
 			.replace(/[.,\/"#!?$%\^&\*\[\];:{}=\-_~()]/g,'') // remove random formatting
 			.replace(/[0-9]/g, ''); // remove all numbers
-			//var f1 = d.replace(/[.,\/#"!?$%\^&\*;:{}=\-_`~()]/g,'');
-			//var f2 = f1.replace(/\.{3}/, " ");
-			var spl = formatted.split(" ").filter(Boolean); // Filter for non-null words
-
+			var spl = formatted.split(" ").filter(d => !stopWords.includes(d.toLowerCase().trim())).filter(Boolean); // Filter for non-null words and stopwords
 			for(var i=0;i<spl.length;i++) {
-				var temp = spl[i].replace(/[" ]/g, '').toLowerCase();
+				var temp = spl[i].replace(/[" ]/g, '').toLowerCase().trim();;
 				if(words[temp]) {
 					words[temp] = words[temp] + 1;
 				}
@@ -156,7 +182,8 @@ function getFrequencies(data) {
 			}
 		});
 	});
-	return words;
+	var filtered = Object.fromEntries(Object.entries(words).filter(([k,v]) => v>1)); // Return all entries witih more than one occurrance
+	return filtered;
 }
 function createGraph(datum) {
 
@@ -172,8 +199,8 @@ function createGraph(datum) {
 
 	// set the dimensions and margins of the graph
 	var margin = {top: 20, right: 30, bottom: 40, left: 90},
-    width = 460 - margin.left - margin.right,
-    height = 400 - margin.top - margin.bottom;
+    width = 800 - margin.left - margin.right,
+    height = 2000 - margin.top - margin.bottom;
 
     var svg = d3.select("#graph")
     .append("svg")
@@ -187,14 +214,6 @@ function createGraph(datum) {
 	.domain([0, max])
 	.range([0, width]);
 
-	svg.append("g")
-		.attr("transform", "translate(0," + height + ")")
-		.call(d3.axisBottom(x))
-		.selectAll("text")
-			.attr("transform", "translate(-10,0)rotate(-45)")
-			.style("text-anchor", "end");
-
-	// Y axis
 	var y = d3.scaleBand()
 	  .range([ 0, height ])
 	  .domain(data.map(function(d) { return d.key; }))
@@ -202,14 +221,23 @@ function createGraph(datum) {
 	svg.append("g")
 	  .call(d3.axisLeft(y))
 
+	svg.append("g")
+		.attr("transform", "translate(0," + height + ")")
+		.call(d3.axisBottom(x))
+		.selectAll("text")
+			.attr("transform", "translate(-10,0)rotate(-45)")
+			.style("text-anchor", "end");
+
+
+
 	//Bars
 	svg.selectAll("myRect")
 	  .data(data)
 	  .enter()
 	  .append("rect")
-	  .attr("x", x(0) )
-	  .attr("y", function(d) { return y(d); })
-	  .attr("width", function(d) { return x(d.value); })
+	  .attr("x", 0 )
+	  .attr("y", function(d) { return y(d.key); })
+	  .attr("width", function(d) { return d.value; })
 	  .attr("height", y.bandwidth() )
 	  .attr("fill", "#69b3a2");
 }
