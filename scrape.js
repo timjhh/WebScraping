@@ -39,7 +39,6 @@ function query() {
 	try {
 		const result = await getPageData(begin); // Get the sitemap's XML data
 		const resultXML = await parseXML(result); // Parse the JSON into an XML document
-		
 		const elinks = await getEpisodes(resultXML); // Get URL list for episode links
 		const epages = await Promise.all(elinks.map(d => getPageData(d)));
 		const edata = await Promise.all(epages.map(d => parseHTML(d)));
@@ -65,14 +64,12 @@ function tQuery() {
 		const pages = await Promise.all(selected.map(d => getPageData(d)));
 		const tsc = await Promise.all(pages.map(d => parseHTML(d)));
 		const transcripts = await Promise.all(tsc.map(d => parseTranscriptData(d)));
-		const scrubbed = await scrubParagraphs(transcripts);
+		const scrubbed = await scrubParagraphs(transcripts); // Clean up the transcripts and change them to a string
 		const frequency = await getFrequencies(scrubbed);
-		//const surrounding = await getSurroundingWords(scrubbed, "just");
 		//const sorted = await sortFrequencies(frequency);
 		const stats = await getStats(frequency);
 		await appendFrequency(scrubbed, frequency);
 
-		$("#query").attr("disabled", "disabled");
 
 		await createGraph(frequency);	
 
@@ -86,14 +83,7 @@ function tQuery() {
 
 
 
-/*(function getLinks() {
-	$.getJSON('https://api.allorigins.win/get?url=' + encodeURIComponent('http://www.philosophizethis.org/sitemap.xml'), function (data) {
-sitemap.xml', success: function(data) { alert(data); } });
-//var name = $.get('https://www.freecodecamp.com/'        var doc = $.parseXML(data.contents);
-        var links = Array.from(doc.getElementsByTagName("loc"));
-        links.filter(d => d != null && d.textContent.includes("transcript"));
-    });
-}*/
+
 function getPageData(link) {
 	return $.getJSON('https://api.allorigins.win/get?url=' + encodeURIComponent(link));
 }
@@ -114,6 +104,7 @@ function getTranscripts(data) {
     });
     return tsc;
 }
+
 // Gets all episode links from XML sitemap
 // data MUST be in the form of an XML webpage object
 function getEpisodes(data) {
@@ -125,6 +116,7 @@ function getEpisodes(data) {
     });
     return tsc;
 }
+
 // Gets all episode titles from an HTML webpage object
 // data MUST be in the form of an HTML webpage object
 // Returns a dictionary in the format of episode # -> description
@@ -255,9 +247,18 @@ function appendFrequency(transcript, data) {
 			.selectAll("p")
 			.remove(); // Remove all existing frequencies
 
+			/*
+			surrounding.forEach(e => {
+
+
+			});
 			d3.select("#proximity")
-			.append("p")
-			.text(surrounding.key + " -> " + surrounding.value);
+			.selectAll("p")
+			.data(surrounding)
+			.enter()
+			.join("p")
+				.text(surrounding.key + " -> " + surrounding.value);
+			*/
 		});
 	});
 	/*
@@ -290,8 +291,8 @@ function scrubParagraphs(data) {
 			transcript = transcript + formatted + " ";
 		});
 	});
-	var spl = transcript.split(" ").filter(d => !stopWords.includes(d.toLowerCase().trim())).filter(Boolean).join(" ");
-	return spl;
+	var spl = transcript.split(" ").filter(d => !stopWords.includes(d.trim())).filter(Boolean).join(" ");
+	return spl.toLowerCase();
 }
 
 /*
@@ -312,18 +313,6 @@ function getFrequencies(data) {
 		}
 
 	}
-
-	/*
-	for(var i=0;i<data.length;i++) {
-				var temp = data[i].replace(/[" ]/g, '').toLowerCase().trim();;
-				if(words[temp]) {
-					words[temp] = words[temp] + 1;
-				}
-				else {
-					words[temp] = 1;
-				}
-			}
-	*/
 	//var filtered = Object.fromEntries(Object.entries(words).filter(([k,v]) => v>1)); // Return all entries with more than one occurrance
 	return words;
 }
@@ -352,12 +341,11 @@ function getSurroundingWords(transcript, word, threshold) {
 		if(end > (data.length - 1)) {
 			end = data.length - 1;
 		}
+		console.log(index);
 		words = words + data.slice(begin, index).join(" ") + " " + data.slice(index+1, end).join(" ") + " ";
 		//data = data.slice(index+1, data.length);
 	}
 	
-	console.log(words);
-	console.log(getFrequencies(words));
 	return getFrequencies(words);
 
 }
