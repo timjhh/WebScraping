@@ -22,7 +22,7 @@ const stopWords = [ // Words to disclude from word count - taken from microsoft 
     "other", "others", "otherwise", "our", "ours", "ourselves", "out", "over", "own","part", "per", "perhaps", 
     "please", "put", "rather", "re", "same", "see", "seem", "seemed", "seeming", "seems", "serious", "several", 
     "she", "should", "show", "side", "since", "sincere", "six", "sixty", "so", "some", "somehow", "someone", 
-    "something", "sometime", "sometimes", "somewhere", "still", "such", "system", "take", "ten", "than", 
+    "something", "sometime", "sometimes", "somewhere", "still", "such", "take", "ten", "than", 
     "that", "the", "their", "them", "themselves", "then", "thence", "there", "thereafter", "thereby", "therefore", 
     "therein", "thereupon", "these", "they", "thick", "thin", "third", "this", "those", "though", "three", 
     "through", "throughout", "thru", "thus", "to", "together", "too", "top", "toward", "towards", "transcript", "twelve", 
@@ -44,10 +44,10 @@ function query() {
 		const epages = await Promise.all(elinks.map(d => getPageData(d)));
 		const edata = await Promise.all(epages.map(d => parseHTML(d)));
 		const titles = await getEpisodeTitles(edata); // Create array for all episode titles by parsing HTML
-
+		//const titles = await Promise.all(edata.map(d => getEpisodeTitles(d)));
 		const locdata = await getTranscripts(resultXML); // Get URL list for transcript links
-		
 		const episodes = await associateEpisodes(titles, locdata); // Associate each transcript link with a title to store
+
 		await appendTranscripts(episodes); // Create all transcripts in selection box
 
 	} catch(err) {
@@ -65,11 +65,12 @@ function tQuery() {
 		const pages = await Promise.all(selected.map(d => getPageData(d)));
 		const tsc = await Promise.all(pages.map(d => parseHTML(d)));
 		const transcripts = await Promise.all(tsc.map(d => parseTranscriptData(d)));
-
-		const frequency = await getFrequencies(transcripts);
-		const sorted = await sortFrequencies(frequency);
+		const scrubbed = await scrubParagraphs(transcripts);
+		const frequency = await getFrequencies(scrubbed);
+		//const surrounding = await getSurroundingWords(scrubbed, "just");
+		//const sorted = await sortFrequencies(frequency);
 		const stats = await getStats(frequency);
-		await appendFrequency(frequency);
+		await appendFrequency(scrubbed, frequency);
 
 		$("#query").attr("disabled", "disabled");
 
@@ -129,6 +130,7 @@ function getEpisodes(data) {
 // Returns a dictionary in the format of episode # -> description
 function getEpisodeTitles(data) {
 	
+	// Code for array-oriented approach
 	var titles = {};
 	var ttls = data.map(d => d.find('h1').text()).filter(d => d.toLowerCase().includes("episode")); // Find the episode description(usually the only h1 tag on the page)
 
@@ -140,11 +142,18 @@ function getEpisodeTitles(data) {
 		}
 		
 	});
-	/*data.forEach(function(d) {
-		var ttls = d.find('h1').text().toLowerCase();
-		var title = ttls.filter(d => d.includes("episode")).split("-");
-		titles.push([title[0].match(/[0-9]/g), title[1]]);
-	});*/
+	
+	
+	// Code for single value approach
+	//var ttl = data.map(d => d.find('h1').text()).filter(d => d.toLowerCase().includes("episode"));
+	
+	//var title = ttl.split("-");
+	//var description = title.slice(1).join("").trim(); // Include some titles with extra hyphens in their description, trim the whitespace too!
+	//if(description.length < 100 && description != "") { // Filters out ??? big descriptions ??? just don't take it out
+	//titles[parseInt(title[0].match(/[1-9]\d*|0\d+/g)[0])] = description; // index a regex matching of all numbers followed by the description
+
+
+
 	return titles;
 }
 function parseTranscriptData(data) {
@@ -195,13 +204,15 @@ function associateEpisodes(titles, links) {
 		}
 		
 	});
-	console.log(episodes);
 
+	// Tried to sort episodes by value :(
+	/*
 	var sorted = d3.entries(episodes).sort(function(f, s) {
 		return parseInt(f.value.split(" ")[0]) - parseInt(s.value.split(" ")[0]);
 	});
 	console.log(sorted);
-	return sorted;
+	*/
+	return episodes;
 }
 function appendTranscripts(datum) {
 
@@ -221,8 +232,9 @@ function appendTranscripts(datum) {
 }
 /*
 	Create a frequency box to show descending word frequencies
+	Also appends the functionality to display surrounding word frequencies by clicking on a word
 */
-function appendFrequency(data) {
+function appendFrequency(transcript, data) {
 
 	var container = d3.select("#transcript");
 	var sorted = d3.entries(data).sort(function(f, s) {
@@ -231,7 +243,22 @@ function appendFrequency(data) {
 
 	sorted.forEach(d => {
 		container.append("p")
-		.text(d.key + " -> " + d.value);
+		.text(d.key + " -> " + d.value)
+		.on("click", function() {
+
+
+			var surrounding = getSurroundingWords(transcript, d.key, 3);
+			var sorted = d3.entries(surrounding).sort(function(f, s) {
+				return s.value - f.value;
+			});
+			d3.select("#proximity")
+			.selectAll("p")
+			.remove(); // Remove all existing frequencies
+
+			d3.select("#proximity")
+			.append("p")
+			.text(surrounding.key + " -> " + surrounding.value);
+		});
 	});
 	/*
 	d3.select("#transcript")
@@ -245,23 +272,50 @@ function appendFrequency(data) {
 	*/
 }
 
-
 /*
-	Create a query box for all transcripts
+	Takes an array of transcripts - removing all punctuation, stop words and null words - returns a single paragraph
 */
-
-function getFrequencies(data) {
-	var words = {};
+function scrubParagraphs(data) {
+	var transcript = "";
 	data.forEach(function(tsc) {
 		tsc.forEach(function(d) {
 			var formatted = d
 			.replace(/[.]{3}/g, " ")
+			.replace(/[/]/g, " ")
 			.replace(/[\u2026]/g, " ") // remove the triple ellipse unicode symbol smh
-			.replace(/[.,\/"#!?$%\^&\*\[\];:{}=\-_~()]/g,'') // remove random formatting
+			.replace(/[.,"#!?$%\^&\*\[\];:{}=\-_~()]/g,'') // remove random formatting
 			.replace(/[0-9]/g, ''); // remove all numbers
-			var spl = formatted.split(" ").filter(d => !stopWords.includes(d.toLowerCase().trim())).filter(Boolean); // Filter for non-null words and stopwords
-			for(var i=0;i<spl.length;i++) {
-				var temp = spl[i].replace(/[" ]/g, '').toLowerCase().trim();;
+			//var spl = formatted.split(" ").filter(d => !stopWords.includes(d.toLowerCase().trim())).filter(Boolean); // Filter for non-null words and stopwords
+			
+			transcript = transcript + formatted + " ";
+		});
+	});
+	var spl = transcript.split(" ").filter(d => !stopWords.includes(d.toLowerCase().trim())).filter(Boolean).join(" ");
+	return spl;
+}
+
+/*
+	Return a dictionary of all word frequencies, given a string
+*/
+function getFrequencies(data) {
+	var words = {};
+	var spl = data.split(" ");
+	//var spl = data.split(" ").filter(d => !stopWords.includes(d.toLowerCase().trim())).filter(Boolean); // Filter for non-null words and stopwords
+
+	for(var i=0;i<spl.length;i++) {
+		var temp = spl[i].replace(/[" ]/g, '').toLowerCase().trim();;
+		if(words[temp]) {
+			words[temp] = words[temp] + 1;
+		}
+		else {
+			words[temp] = 1;
+		}
+
+	}
+
+	/*
+	for(var i=0;i<data.length;i++) {
+				var temp = data[i].replace(/[" ]/g, '').toLowerCase().trim();;
 				if(words[temp]) {
 					words[temp] = words[temp] + 1;
 				}
@@ -269,12 +323,42 @@ function getFrequencies(data) {
 					words[temp] = 1;
 				}
 			}
-		});
-	});
-	var filtered = Object.fromEntries(Object.entries(words).filter(([k,v]) => v>1)); // Return all entries witih more than one occurrance
-	return filtered;
+	*/
+	//var filtered = Object.fromEntries(Object.entries(words).filter(([k,v]) => v>1)); // Return all entries with more than one occurrance
+	return words;
 }
 function sortByValue(data) {
+
+}
+/*
+	Creates and returns a frequency dictionary of all words surrounding the one inputted, given:
+	word - the word to build surroundings from
+	threshold - how many words out to search
+	transcript - a string to sort through
+*/
+function getSurroundingWords(transcript, word, threshold) {
+	
+	var data = transcript.split(" ");
+	var index = -1;
+	var words = "";
+	//var frequencies = {};
+	
+	while((index = data.indexOf(word, index+1)) != -1) {
+		var begin = index - threshold;
+		var end = index + threshold + 1; // + 1 because the end will be exclusive
+		if(begin < 0) {
+			begin = 0;	
+		} 
+		if(end > (data.length - 1)) {
+			end = data.length - 1;
+		}
+		words = words + data.slice(begin, index).join(" ") + " " + data.slice(index+1, end).join(" ") + " ";
+		//data = data.slice(index+1, data.length);
+	}
+	
+	console.log(words);
+	console.log(getFrequencies(words));
+	return getFrequencies(words);
 
 }
 function getStats(datum) {
@@ -297,7 +381,7 @@ function getStats(datum) {
 function createGraph(datum) {
 
 	var data = d3.entries(datum);
-
+	var singleHeight = 8;
 
 	var sortable = [];
 	for(var tmp in data) {
@@ -305,13 +389,13 @@ function createGraph(datum) {
 	}
 	sortable.sort((a,b) => b[1] - a[1]);
 
-	var max = sortable[0][1];
-
+	//var max = sortable[0][1];
+	var max = d3.max(data, d => d.value);
 
 	// set the dimensions and margins of the graph
 	var margin = {top: 20, right: 30, bottom: 40, left: 90},
     width = 800 - margin.left - margin.right,
-    height = 2000 - margin.top - margin.bottom;
+    height = (singleHeight * data.length) - margin.top - margin.bottom;
 
     var svg = d3.select("#graph")
     .append("svg")
