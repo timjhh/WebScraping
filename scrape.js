@@ -3,10 +3,10 @@ const begin = "http://www.philosophizethis.org/sitemap.xml";
 
 
 const stopWords = [ // Words to disclude from word count - taken from microsoft PowerBI-Visuals-WordCloud
-    "a", "amazon", "about", "above", "above", "across", "after", "afterwards", "again", "against", "all", "almost", 
+    "a", "amazon", "about", "above", "above", "across", "ad", "after", "afterwards", "again", "against", "all", "almost", 
     "alone", "along", "already", "also","although","always","am","among", "amongst", "amoungst", "amount",  
     "an", "and", "another", "any","anyhow","anyone","anything","anyway", "anywhere", "are", "around", "as",  
-    "at", "back","be","became", "because","become","becomes", "becoming", "been", "before", "beforehand", "behind", 
+    "at", "back", "bc", "be","became", "because","become","becomes", "becoming", "been", "before", "beforehand", "behind", 
     "being", "below", "beside", "besides", "between", "beyond", "bill", "both", "bottom","but", "by", "call", 
     "can", "cannot", "cant", "co", "con", "could", "couldnt", "cry", "de", "describe", "detail", "do", "done", 
     "down", "due", "during", "each", "eg", "eight", "either", "eleven","else", "elsewhere", "empty", "enough", "episode", 
@@ -66,10 +66,8 @@ function tQuery() {
 		const transcripts = await Promise.all(tsc.map(d => parseTranscriptData(d)));
 		const scrubbed = await scrubParagraphs(transcripts); // Clean up the transcripts and change them to a string
 		const frequency = await getFrequencies(scrubbed);
-		//const sorted = await sortFrequencies(frequency);
 		const stats = await getStats(frequency);
 		await appendFrequency(scrubbed, frequency);
-
 
 		await createGraph(frequency);	
 
@@ -79,10 +77,6 @@ function tQuery() {
 	}) ();
 
 }
-
-
-
-
 
 function getPageData(link) {
 	return $.getJSON('https://api.allorigins.win/get?url=' + encodeURIComponent(link));
@@ -144,8 +138,6 @@ function getEpisodeTitles(data) {
 	//if(description.length < 100 && description != "") { // Filters out ??? big descriptions ??? just don't take it out
 	//titles[parseInt(title[0].match(/[1-9]\d*|0\d+/g)[0])] = description; // index a regex matching of all numbers followed by the description
 
-
-
 	return titles;
 }
 function parseTranscriptData(data) {
@@ -168,8 +160,11 @@ function appendTranscript(data) {
 		.selectAll("p")
 		.data(data)
 		.enter().append("p")
+		.attr("class", "my-0")
 		.text(function(d) { return d; });
 }
+
+
 /*
 	Returns an array in the format [Episode Title, Transcript Link], given:
 	-an array of titles in the format [Episode #, Episode Title]
@@ -216,22 +211,19 @@ function appendTranscripts(datum) {
 		.attr("href", function(d) { return d.key; })
 		.text(function(d) { 
 			return d.value;
-			//var spl = d.split("/");
-			//var ename = spl[spl.length-1];
-			//return ename; 
 		});
 
 }
 /*
 	Create a frequency box to show descending word frequencies
 	Also appends the functionality to display surrounding word frequencies by clicking on a word
+	transcript - the string transcript
+	data - word frequencies given the transcript
 */
 function appendFrequency(transcript, data) {
 	var threshold = 3;
 	var container = d3.select("#transcript");
-	var sorted = d3.entries(data).sort(function(f, s) {
-		return s.value - f.value;
-	});
+	var sorted = sortByValue(data);
 
 	sorted.forEach(d => {
 		container.append("p")
@@ -241,18 +233,16 @@ function appendFrequency(transcript, data) {
 			$('#word-clicked').text("Word Frequency Within " + threshold + " Spaces of: " + d.key);
 
 			var surrounding = getSurroundingWords(transcript, d.key, 3); // TODO add dynamic threshold
-			var sSorted = d3.entries(surrounding).sort(function(f, s) { // Sort proximity words greatest to least
-				return s.value - f.value;
-			});
-
+			var sSorted = sortByValue(surrounding);
 
 			var box = d3.select("#proximity");
 
-			box.selectAll("p")
+			box.selectAll("p") // Remove all elements before appending new ones
 			.remove();
 				
-			sSorted.forEach(f => {
+			sSorted.forEach(f => { // Append new values
 			box.append("p")
+			.attr("class", "my-0")
 			.text(f.key + " -> " + f.value);
 			});
 
@@ -265,21 +255,24 @@ function appendFrequency(transcript, data) {
 	Takes an array of transcripts - removing all punctuation, stop words and null words - returns a single paragraph
 */
 function scrubParagraphs(data) {
+	// ouch
 	var transcript = "";
 	data.forEach(function(tsc) {
 		tsc.forEach(function(d) {
 			var formatted = d
-			.replace(/[.]{3}/g, " ")
-			.replace(/[/]/g, " ")
-			.replace(/[\u2026]/g, " ") // remove the triple ellipse unicode symbol smh
-			.replace(/[.,"#!?$%\^&\*\[\];:{}=\-_~()]/g,'') // remove random formatting
-			.replace(/[0-9]/g, ''); // remove all numbers
-			//var spl = formatted.split(" ").filter(d => !stopWords.includes(d.toLowerCase().trim())).filter(Boolean); // Filter for non-null words and stopwords
-			
+			.replace(/[.]{3}/g, " ") // 3 dots usually indicate a space
+			.replace(/[.?!]/ig, " ") // In case the space was forgotten
+			//.replace(/[a-z][.?!][a-z]/ig, " ") // In case the space was forgotten
+			.replace(/[ ]['][a-z]|['][" ][ ]/ig, " ") // remove quoted text
+			.replace(/[/]/g, " ") // A slash usually indicates two words
+			.replace(/[\u2026]/g, " ") // casually remove the triple ellipse unicode symbol smh
+			.replace(/[.,"#!?$%\^&\*\[\];:{}=\-_~()“”\=\+]/g,'') // remove random formatting
+			.replace(/[0-9][a-z]*/ig, ''); // remove all numbers
+
 			transcript = transcript + formatted + " ";
 		});
 	});
-	var spl = transcript.split(" ").filter(d => !stopWords.includes(d.trim())).filter(Boolean).join(" ");
+	var spl = transcript.split(" ").filter(d => !stopWords.includes(d.trim())).filter(Boolean).join(" "); // Filter for non-null words and stopwords
 	return spl.toLowerCase();
 }
 
@@ -289,10 +282,10 @@ function scrubParagraphs(data) {
 function getFrequencies(data) {
 	var words = {};
 	var spl = data.split(" ");
-	//var spl = data.split(" ").filter(d => !stopWords.includes(d.toLowerCase().trim())).filter(Boolean); // Filter for non-null words and stopwords
 
 	for(var i=0;i<spl.length;i++) {
-		var temp = spl[i].replace(/[" ]/g, '').toLowerCase().trim();;
+		var temp = spl[i].replace(/[" ]/g, '').toLowerCase().trim();
+		if(!temp) continue;
 		if(words[temp]) {
 			words[temp] = words[temp] + 1;
 		}
@@ -301,7 +294,6 @@ function getFrequencies(data) {
 		}
 
 	}
-	//var filtered = Object.fromEntries(Object.entries(words).filter(([k,v]) => v>1)); // Return all entries with more than one occurrance
 	return words;
 }
 /*
@@ -310,8 +302,10 @@ function getFrequencies(data) {
 function sortByValue(datum) {
 
 	var data = d3.entries(datum);
-
-
+	var sorted = data.sort(function(f, s) { // Sort proximity words greatest to least
+				return s.value - f.value;
+	});
+	return sorted;
 
 }
 /*
@@ -338,7 +332,6 @@ function getSurroundingWords(transcript, word, threshold) {
 		}
 
 		words = words + data.slice(begin, index).join(" ") + " " + data.slice(index+1, end).join(" ") + " ";
-		//data = data.slice(index+1, data.length);
 	}
 	
 	return getFrequencies(words);
@@ -364,20 +357,28 @@ function getStats(datum) {
 } 
 function createGraph(datum) {
 
-	var data = d3.entries(datum);
+	var data = sortByValue(datum);
+
 	var singleHeight = 8; // Approximate height of a single graph element
 
 	var max = d3.max(data, d => d.value);
 
+	//Create tooltip
+	var tooltip = d3.select("#graph").append("div")
+		.attr("style", "background-color: white;")
+		.attr("class", "tooltip")
+		.style("opacity", 0);
+
+
 	// set the dimensions and margins of the graph
-	var margin = {top: 20, right: 30, bottom: 40, left: 90},
+	var margin = {top: 40, right: 30, bottom: 40, left: 90},
     width = $("#graph").width() - margin.left - margin.right,
-    height = (singleHeight * data.length);
+    height = (singleHeight * data.length) + margin.top + margin.bottom;
 
     var svg = d3.select("#graph")
     .append("svg")
     	.attr("width", width + margin.left + margin.right)
-    	.attr("height", height + margin.top + margin.bottom)
+    	.attr("height", height)
     .append("g")
     	.attr("transform",
     		"translate(" + margin.left + "," + margin.top + ")");
@@ -394,18 +395,15 @@ function createGraph(datum) {
 	  .call(d3.axisLeft(y))
 
 	svg.append("g")
-		//.attr("transform", "translate(0," + height ")")
 		.attr("transform", "translate(0,-5)")
 		.call(d3.axisTop(x))
 		.selectAll("text")
-			//.attr("transform", "translate(-10,0)rotate(-45)")
-			//.attr("transform", "translate(-10," + height + ")")
 			.attr("transform", "translate(-10,0)")
 			.style("text-anchor", "end");
 
 
 
-	//Bars
+	// Rectangles
 	svg.selectAll("myRect")
 	  .data(data)
 	  .enter()
@@ -414,5 +412,18 @@ function createGraph(datum) {
 	  .attr("y", function(d) { return y(d.key); })
 	  .attr("width", function(d) { return ((d.value * width) / max); })
 	  .attr("height", y.bandwidth() )
-	  .attr("fill", "#69b3a2");
+	  .attr("fill", function(d) { return d.key.charCodeAt(0) % 2 ? "#64727b" : "#28363f" })
+	  .on("mouseover", function(d) {
+	  	tooltip.transition()
+	  	.duration(200)
+	  	.style("opacity", .9);
+	  	tooltip.html("Word: " + d.key + "<br/>" + "Uses: " + d.value)
+	  	.style("left", (d3.event.pageX) + "px")
+	  	.style("top", (d3.event.pageY - 28) + "px");
+	  }) 
+	  .on("mouseout", function(d) {
+	  	tooltip.transition()
+	  	.duration(500)
+	  	.style("opacity", 0);
+	  });
 }
