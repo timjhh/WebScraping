@@ -192,15 +192,17 @@ function associateEpisodes(titles, links) {
 		
 	});
 
-	
-	// Not working because you call d3.entries later :(
+
 	var sorted = d3.entries(episodes).sort(function(f, s) {
 		var i = parseInt(f.value.split(" ")[0]);
 		var ii = parseInt(s.value.split(" ")[0]);
-		return (i != NaN && ii != NaN) ? i - ii : 0; 
+		if(i != NaN && ii == NaN) return -1;
+		else if(i == NaN && ii != NaN) return 1;
+		else if(i == NaN && ii == NaN) return 0;
+		else return i - ii;
+		//else return (i != NaN && ii != NaN) ? i - ii : 0; 
 		
 	});
-	console.log(sorted);
 	
 	return sorted;
 }
