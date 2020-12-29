@@ -5,17 +5,17 @@ const begin = "http://www.philosophizethis.org/sitemap.xml";
 const stopWords = [ // Words to disclude from word count - taken from microsoft PowerBI-Visuals-WordCloud
     "a", "amazon", "about", "above", "above", "across", "ad", "after", "afterwards", "again", "against", "all", "almost", 
     "alone", "along", "already", "also","although","always","am","among", "amongst", "amoungst", "amount",  
-    "an", "and", "another", "any","anyhow","anyone","anything","anyway", "anywhere", "are", "around", "as",  
+    "an", "and", "another", "any","anyhow","anyone","anything","anyway", "anywhere", "are", "aren't", "around", "as",  
     "at", "back", "bc", "be","became", "because","become","becomes", "becoming", "been", "before", "beforehand", "behind", 
     "being", "below", "beside", "besides", "between", "beyond", "bill", "both", "bottom","but", "by", "call", 
-    "can", "cannot", "cant", "co", "con", "could", "couldnt", "cry", "de", "describe", "detail", "do", "done", 
+    "can", "cannot", "cant", "co", "con", "could", "couldnt", "cry", "de", "describe", "detail", "do", "done", "don't", 
     "down", "due", "during", "each", "eg", "eight", "either", "eleven","else", "elsewhere", "empty", "enough", "episode", 
     "etc", "even", "ever", "every", "everyone", "everything", "everywhere", "except", "few", "fifteen", "fify", 
     "fill", "find", "fire", "first", "five", "for", "former", "formerly", "forty", "found", "four", "from", 
     "front", "full", "further", "get", "give", "go", "going", "had", "has", "hasnt", "have", "he", "hello", "hence", "her", 
     "here", "hereafter", "hereby", "herein", "hereupon", "hers", "herself", "him", "himself", "his", "how",
-    "however", "hundred", "i", "ie", "if", "i'll", "in", "inc", "indeed", "interest", "into", "is", "it", "its", "it's", "itself",
-    "keep", "last", "latter", "latterly", "least", "less", "let's", "ltd", "made", "many", "may", "me", "meanwhile", 
+    "however", "hundred", "i", "ie", "if", "i'll", "in", "inc", "indeed", "interest", "into", "is", "it", "its", "it’s", "itself", "just",
+    "keep", "last", "latter", "latterly", "least", "less", "let's", "like", "ltd", "made", "many", "may", "me", "meanwhile", 
     "might", "mill", "mine", "more", "moreover", "most", "mostly", "move", "much", "must", "my", "myself", 
     "name", "namely", "neither", "never", "nevertheless", "next", "nine", "no", "nobody", "none", "noone", 
     "nor", "not", "nothing", "now", "nowhere", "of", "off", "often", "on", "once", "one", "only", "onto", "or", 
@@ -171,7 +171,7 @@ function appendTranscript(data) {
 	-an array of transcript links
 	This is accomplished by:
 	-iterating through all transcript links
-	-regular expression matching any number 0-9 from the link
+	-regular expression matching any number from the link
 	-matching this with a number from the titles array
 	-pushing the episode title, link to an array
 	-returning the array 
@@ -192,18 +192,21 @@ function associateEpisodes(titles, links) {
 		
 	});
 
-	// Tried to sort episodes by value :(
-	/*
+	
+	// Not working because you call d3.entries later :(
 	var sorted = d3.entries(episodes).sort(function(f, s) {
-		return parseInt(f.value.split(" ")[0]) - parseInt(s.value.split(" ")[0]);
+		var i = parseInt(f.value.split(" ")[0]);
+		var ii = parseInt(s.value.split(" ")[0]);
+		return (i != NaN && ii != NaN) ? i - ii : 0; 
+		
 	});
 	console.log(sorted);
-	*/
-	return episodes;
+	
+	return sorted;
 }
-function appendTranscripts(datum) {
+function appendTranscripts(data) {
 
-	var data = d3.entries(datum);
+	//var data = d3.entries(datum);
 	d3.select("#tSelect")
 		.selectAll("option")
 		.data(data)
@@ -269,11 +272,12 @@ function scrubParagraphs(data) {
 			.replace(/[.,"#!?$%\^&\*\[\];:{}=\-_~()“”\=\+]/g,'') // remove random formatting
 			.replace(/[0-9][a-z]*/ig, ''); // remove all numbers
 
-			transcript = transcript + formatted + " ";
+			transcript = transcript + formatted.toLowerCase() + " ";
 		});
 	});
 	var spl = transcript.split(" ").filter(d => !stopWords.includes(d.trim())).filter(Boolean).join(" "); // Filter for non-null words and stopwords
-	return spl.toLowerCase();
+	console.log(spl);
+	return spl;
 }
 
 /*
