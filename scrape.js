@@ -227,7 +227,7 @@ function appendTranscripts(datum) {
 	Also appends the functionality to display surrounding word frequencies by clicking on a word
 */
 function appendFrequency(transcript, data) {
-
+	var threshold = 3;
 	var container = d3.select("#transcript");
 	var sorted = d3.entries(data).sort(function(f, s) {
 		return s.value - f.value;
@@ -238,39 +238,27 @@ function appendFrequency(transcript, data) {
 		.text(d.key + " -> " + d.value)
 		.on("click", function() {
 
+			$('#word-clicked').text("Word Frequency Within " + threshold + " Spaces of: " + d.key);
 
-			var surrounding = getSurroundingWords(transcript, d.key, 3);
-			var sorted = d3.entries(surrounding).sort(function(f, s) {
+			var surrounding = getSurroundingWords(transcript, d.key, 3); // TODO add dynamic threshold
+			var sSorted = d3.entries(surrounding).sort(function(f, s) { // Sort proximity words greatest to least
 				return s.value - f.value;
 			});
-			d3.select("#proximity")
-			.selectAll("p")
-			.remove(); // Remove all existing frequencies
-
-			/*
-			surrounding.forEach(e => {
 
 
+			var box = d3.select("#proximity");
+
+			box.selectAll("p")
+			.remove();
+				
+			sSorted.forEach(f => {
+			box.append("p")
+			.text(f.key + " -> " + f.value);
 			});
-			d3.select("#proximity")
-			.selectAll("p")
-			.data(surrounding)
-			.enter()
-			.join("p")
-				.text(surrounding.key + " -> " + surrounding.value);
-			*/
+
+			
 		});
 	});
-	/*
-	d3.select("#transcript")
-		.selectAll("p")
-		.data(data)
-		.enter().append("p")
-		.text(function(d) {
-			console.log(Object.entries(d));
-			return d; 
-		});
-	*/
 }
 
 /*
@@ -316,7 +304,14 @@ function getFrequencies(data) {
 	//var filtered = Object.fromEntries(Object.entries(words).filter(([k,v]) => v>1)); // Return all entries with more than one occurrance
 	return words;
 }
-function sortByValue(data) {
+/*
+	Takes an unordered dictionary, changes it to a d3.entries() array, sorts by(guaranteed numerical) value and returns it
+*/
+function sortByValue(datum) {
+
+	var data = d3.entries(datum);
+
+
 
 }
 /*
@@ -341,7 +336,7 @@ function getSurroundingWords(transcript, word, threshold) {
 		if(end > (data.length - 1)) {
 			end = data.length - 1;
 		}
-		console.log(index);
+
 		words = words + data.slice(begin, index).join(" ") + " " + data.slice(index+1, end).join(" ") + " ";
 		//data = data.slice(index+1, data.length);
 	}
@@ -357,6 +352,7 @@ function getStats(datum) {
 	var stdev = d3.deviation(data, d => d.value);
 	var max = d3.max(data, d => d.value);
 	var min = d3.min(data, d => d.value);
+
 	console.log("stdev " + stdev);
 	console.log("mean " + mean);
 	console.log("median " + median);
@@ -369,21 +365,14 @@ function getStats(datum) {
 function createGraph(datum) {
 
 	var data = d3.entries(datum);
-	var singleHeight = 8;
+	var singleHeight = 8; // Approximate height of a single graph element
 
-	var sortable = [];
-	for(var tmp in data) {
-		sortable.push([tmp, data[tmp]]);
-	}
-	sortable.sort((a,b) => b[1] - a[1]);
-
-	//var max = sortable[0][1];
 	var max = d3.max(data, d => d.value);
 
 	// set the dimensions and margins of the graph
 	var margin = {top: 20, right: 30, bottom: 40, left: 90},
-    width = 800 - margin.left - margin.right,
-    height = (singleHeight * data.length) - margin.top - margin.bottom;
+    width = $("#graph").width() - margin.left - margin.right,
+    height = (singleHeight * data.length);
 
     var svg = d3.select("#graph")
     .append("svg")
@@ -405,10 +394,13 @@ function createGraph(datum) {
 	  .call(d3.axisLeft(y))
 
 	svg.append("g")
-		.attr("transform", "translate(0," + height + ")")
-		.call(d3.axisBottom(x))
+		//.attr("transform", "translate(0," + height ")")
+		.attr("transform", "translate(0,-5)")
+		.call(d3.axisTop(x))
 		.selectAll("text")
-			.attr("transform", "translate(-10,0)rotate(-45)")
+			//.attr("transform", "translate(-10,0)rotate(-45)")
+			//.attr("transform", "translate(-10," + height + ")")
+			.attr("transform", "translate(-10,0)")
 			.style("text-anchor", "end");
 
 
@@ -420,7 +412,7 @@ function createGraph(datum) {
 	  .append("rect")
 	  .attr("x", 0 )
 	  .attr("y", function(d) { return y(d.key); })
-	  .attr("width", function(d) { return d.value; })
+	  .attr("width", function(d) { return ((d.value * width) / max); })
 	  .attr("height", y.bandwidth() )
 	  .attr("fill", "#69b3a2");
 }
