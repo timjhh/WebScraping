@@ -260,6 +260,8 @@ function appendTranscripts(data) {
 function appendFrequency(transcript, data) {
 	var threshold = 3;
 	var container = d3.select("#transcript");
+	container.html("");
+
 	var sorted = sortByValue(data);
 
 	sorted.forEach(d => {
@@ -394,6 +396,8 @@ function getStats(datum) {
 	console.log("75th quantile " + d3.quantile(data, .75, d => d.value));
 } 
 function createGraph(datum) {
+
+	$("#graph").html("");
 
 	var data = sortByValue(datum);
 
