@@ -38,16 +38,31 @@ function query() {
 	(async () => {
 	try {
 		const result = await getPageData(begin); // Get the sitemap's XML data
+		
+		$("#progress").append("Getting Episode...");
 		const resultXML = await parseXML(result); // Parse the JSON into an XML document
+		
+		$("#progress").append("Links...");
 		const elinks = await getEpisodes(resultXML); // Get URL list for episode links
+		
+		$("#progress").append("Pages...");
 		const epages = await Promise.all(elinks.map(d => getPageData(d)));
+		
+		$("#progress").append("Data...");
 		const edata = await Promise.all(epages.map(d => parseHTML(d)));
+		
+		$("#progress").append("Titles...");
 		const titles = await getEpisodeTitles(edata); // Create array for all episode titles by parsing HTML
+		
 		//const titles = await Promise.all(edata.map(d => getEpisodeTitles(d)));
 		const locdata = await getTranscripts(resultXML); // Get URL list for transcript links
-		const episodes = await associateEpisodes(titles, locdata); // Associate each transcript link with a title to store
 
+		$("#progress").append("Associating...");
+		const episodes = await associateEpisodes(titles, locdata); // Associate each transcript link with a title to store
+		
+		$("#progress").append("Done!");
 		await appendTranscripts(episodes); // Create all transcripts in selection box
+		
 
 	} catch(err) {
 		console.log(err);
@@ -61,15 +76,32 @@ function tQuery() {
 	(async () => {
 	try {
 		const selected = await $("#tSelect").find("option:selected").map(function() { return $(this).attr("href"); }).get(); // Get all selected transcripts
+		
+		$("#progress").text("Getting Page Data...");
 		const pages = await Promise.all(selected.map(d => getPageData(d)));
+		
+		$("#progress").append("Pages...");
 		const tsc = await Promise.all(pages.map(d => parseHTML(d)));
+		
+		$("#progress").append("Transcripts...");
 		const transcripts = await Promise.all(tsc.map(d => parseTranscriptData(d)));
+		
+		$("#progress").append("Scrubbing...");
 		const scrubbed = await scrubParagraphs(transcripts); // Clean up the transcripts and change them to a string
+		
+		$("#progress").append("Getting Frequencies...");
 		const frequency = await getFrequencies(scrubbed);
+		
+		$("#progress").append("Generating Stats...");
 		const stats = await getStats(frequency);
+		
+		$("#progress").append("Appending Frequency...");
 		await appendFrequency(scrubbed, frequency);
 
+		$("#progress").append("Creating Graph...");
 		await createGraph(frequency);	
+
+		$("#progress").append("Done!");
 
 	} catch(err) {
 		console.log(err);
