@@ -14,7 +14,7 @@ const stopWords = [ // Words to disclude from word count - taken from microsoft 
     "fill", "find", "fire", "first", "five", "for", "former", "formerly", "forty", "found", "four", "from", 
     "front", "full", "further", "get", "give", "go", "going", "had", "has", "hasnt", "have", "he", "hello", "hence", "her", 
     "here", "hereafter", "hereby", "herein", "hereupon", "hers", "herself", "him", "himself", "his", "how",
-    "however", "hundred", "i", "ie", "if", "i'll", "in", "inc", "indeed", "interest", "into", "is", "it", "its", "it’s", "itself", "just",
+    "however", "hundred", "i", "ie", "if", "i'll", "im", "i'm" , "in", "inc", "indeed", "interest", "into", "is", "it", "its", "it’s", "itself", "just",
     "keep", "last", "latter", "latterly", "least", "less", "let's", "like", "ltd", "made", "many", "may", "me", "meanwhile", 
     "might", "mill", "mine", "more", "moreover", "most", "mostly", "move", "much", "must", "my", "myself", 
     "name", "namely", "neither", "never", "nevertheless", "next", "nine", "no", "nobody", "none", "noone", 
@@ -29,8 +29,8 @@ const stopWords = [ // Words to disclude from word count - taken from microsoft 
     "twenty", "two", "un", "under", "until", "up", "upon", "us", "very", "via", "was", "we", "well", "were", 
     "what", "whatever", "when", "whence", "whenever", "where", "whereafter", "whereas", "whereby", "wherein",
     "whereupon", "wherever", "whether", "which", "while", "whither", "who", "whoever", "whole", "whom", "whose", 
-    "why", "will", "with", "within", "without", "would", "year", "years", "yet", "you", "your", "you're", "yours", "yourself", "yourselves", "the", "stephen", "west",
-    "sponsor", "i'm"
+    "why", "will", "with", "within", "without", "would", "year", "years", "yet", "you", "your", "youre", "you're", "yours", "yourself", "yourselves", "the", "stephen", "west",
+    "sponsor"
     ];
 
 function query() {
@@ -46,10 +46,10 @@ function query() {
 		const elinks = await getEpisodes(resultXML); // Get URL list for episode links
 		
 		$("#progress").append("Pages...");
-		const epages = await Promise.all(elinks.map(d => getPageData(d)));
+		const epages = await Promise.all(elinks.map(d => getPageData(d))); // Get page information as JSON
 		
 		$("#progress").append("Data...");
-		const edata = await Promise.all(epages.map(d => parseHTML(d)));
+		const edata = await Promise.all(epages.map(d => parseHTML(d))); // Convert JSON pages to HTML
 		
 		$("#progress").append("Titles...");
 		const titles = await getEpisodeTitles(edata); // Create array for all episode titles by parsing HTML
@@ -90,13 +90,13 @@ function tQuery() {
 		const scrubbed = await scrubParagraphs(transcripts); // Clean up the transcripts and change them to a string
 		
 		$("#progress").append("Getting Frequencies...");
-		const frequency = await getFrequencies(scrubbed);
+		const frequency = await getFrequencies(scrubbed); // Generate word frequency dictionary
 		
 		$("#progress").append("Generating Stats...");
 		const stats = await getStats(frequency);
 		
 		$("#progress").append("Appending Frequency...");
-		await appendFrequency(scrubbed, frequency);
+		await appendFrequency(scrubbed, frequency); // Pass along the frequency and transcript for the webpage
 
 		$("#progress").append("Creating Graph...");
 		await createGraph(frequency);	
@@ -264,6 +264,13 @@ function appendFrequency(transcript, data) {
 
 	var sorted = sortByValue(data);
 
+	d3.select("#transcript")
+	.selectAll("p")
+	.remove();
+
+	
+
+
 	sorted.forEach(d => {
 		container.append("p")
 		.text(d.key + " -> " + d.value)
@@ -273,12 +280,11 @@ function appendFrequency(transcript, data) {
 
 			var surrounding = getSurroundingWords(transcript, d.key, 3); // TODO add dynamic threshold
 			var sSorted = sortByValue(surrounding);
-
-			var box = d3.select("#proximity");
-
-			box.selectAll("p") // Remove all elements before appending new ones
-			.remove();
 				
+			var box = d3.select("#proximity");
+		box.selectAll("p") // Remove all elements before appending new ones
+		.remove();
+
 			sSorted.forEach(f => { // Append new values
 			box.append("p")
 			.attr("class", "my-0")
@@ -305,7 +311,7 @@ function scrubParagraphs(data) {
 			.replace(/[ ]['][a-z]|['][" ][ ]/ig, " ") // remove quoted text
 			.replace(/[/]/g, " ") // A slash usually indicates two words
 			.replace(/[\u2026]/g, " ") // casually remove the triple ellipse unicode symbol smh
-			.replace(/[.,"#!?$%\^&\*\[\];:{}=\-_~()“”\=\+]/g,'') // remove random formatting
+			.replace(/[.,"#'!?$%\^&\*\[\];:{}=><\-_~()“”\=\+]/g,'') // remove random formatting
 			.replace(/[0-9][a-z]*/ig, ''); // remove all numbers
 
 			transcript = transcript + formatted.toLowerCase() + " ";
