@@ -1,5 +1,16 @@
 # Philosophize This! Webscraping
 
+- [Abstract](#abstract)
+  * [Algorithm](#algorithm)
+- [Examples](#examples)
+  * [Hellenism Series](#hellenism-series)
+  * [Starting Page](#starting-page)
+  * [Simple Transcript Selection](#simple-transcript-selection)
+  * [Multiple Transcript Selection](#multiple-transcript-selection)
+- [Stop Words](#stop-words)
+- [Libraries/Sources](#libraries-sources)
+
+
 # Abstract
 
 The [Philosophize This!](https://www.philosophizethis.org/) podcast is an educational resource covering a wide range of topics including(but not limited to) History, Sociology, Spirituality and Philosophy. Noticing the language used in certain topics, or by certain individuals made me wonder what keywords are used to describe each topic.
@@ -44,10 +55,10 @@ Hellenism was defined by the struggle to find meaning and greater understanding 
 Looking at the words surrounding "things", we see this point emphasized in certain terms. "Things Happen", "Nature of Things", Control, Reason, Good and Bad catch the eye as objective language to describe the world. Was it the lack of structured society, rational understanding of the world, or thematic objectivism in Greek philosophy that generates this sort of language?
 <img alt="Hellenism Example" src="images/4.png">
 
-## Blank UI
+## Starting Page
 <img alt="UI Example" src="/images/1.png">
 
-## Transcript Selection
+## Simple Transcript Selection
 <img alt="Selection Example" src="images/2.png">
 
 ## Multiple Transcript Selection
@@ -104,4 +115,5 @@ This project is powered by:
 
 *[Bootstrap](https://getbootstrap.com/)
 
-Stephen West. (2021). Philosophize This! Podcast [Website]. Retrieved from https://www.philosophizethis.org/
+West, Stephen. “Philosophize This!” Audio blog post. Philosophize This!. Stephen West, 6 June 2013. Web. 2020-Current.
+
