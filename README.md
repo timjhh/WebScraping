@@ -8,7 +8,7 @@
   * [Simple Transcript Selection](#simple-transcript-selection)
   * [Multiple Transcript Selection](#multiple-transcript-selection)
 - [Stop Words](#stop-words)
-- [Libraries/Sources](#libraries-sources)
+- [Sources](#sources)
 
 
 # Abstract
@@ -115,7 +115,7 @@ const stopWords = [
 
 ```
 
-# Libraries/Sources
+# Sources
 
 This project is powered by:
 
