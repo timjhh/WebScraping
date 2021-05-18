@@ -1,6 +1,8 @@
 # Philosophize This! Webscraping
 
-The Philosophize This! podcast(https://www.philosophizethis.org/) is an educational resource covering a wide range of topics including(but not limited to) History, Sociology, Spirituality and Philosophy. Noticing the language used in certain topics, or by certain individuals made me wonder what keywords are used to describe each topic.
+# Abstract
+
+The [Philosophize This!](https://www.philosophizethis.org/) podcast is an educational resource covering a wide range of topics including(but not limited to) History, Sociology, Spirituality and Philosophy. Noticing the language used in certain topics, or by certain individuals made me wonder what keywords are used to describe each topic.
 
 How keywords come up to describe the Greek Hellenistic age? Can we use this to find a dialect for someone such as Epicurus?
 
@@ -11,7 +13,9 @@ To learn more, I took the opportunity to practice web scraping and data visualiz
 This project visualizes the word frequencies from any combined(or single) number of podcast episodes. Clicking on any word reveals words used around it, giving a more qualitative
 description of that word.
 
-The algorithm is based around user interaction, running as follows:
+## Algorithm
+
+The algorithm is user-event driven, generating and modifying content on three large events:
 
 1. Query All Button is Pressed
 	* Filter for a list of URL links
@@ -52,7 +56,7 @@ Looking at the words surrounding "things", we see this point emphasized in certa
 
 # Stop Words
 
-- "Stop Words" deemed irrelevant(the, and, or, I, etc.) that have been removed from the data for more menaingful results -
+Words deemed irrelevant(the, and, or, I, etc.) that have been removed from the data for more menaingful results
 
 ```javascript
 // Words to disclude from word count - originally taken from microsoft PowerBI-Visuals-WordCloud
@@ -89,3 +93,15 @@ const stopWords = [
     ];
 
 ```
+
+# Libraries/Sources
+
+This project is powered by:
+
+*[jQuery](https://jquery.com/)
+
+*[D3.js](https://d3js.org/)
+
+*[Bootstrap](https://getbootstrap.com/)
+
+Stephen West. (2021). Philosophize This! Podcast [Website]. Retrieved from https://www.philosophizethis.org/
