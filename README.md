@@ -53,6 +53,7 @@ Taken from the series on Hellenism, we can see that objective concepts like "thi
 Hellenism was defined by the struggle to find meaning and greater understanding from the power vacuum left after the death of Alexander the Great. There was an emphasis on the local accessibility of gods, and how they manifested in everyday situations. With the uncertainty of each day in an unstructured society, this sort of control and comfort certainly helped to alleviate the larger concerns of survival.
 
 Looking at the words surrounding "things", we see this point emphasized in certain terms. "Things Happen", "Nature of Things", Control, Reason, Good and Bad catch the eye as objective language to describe the world. Was it the lack of structured society, rational understanding of the world, or thematic objectivism in Greek philosophy that generates this sort of language?
+
 <img alt="Hellenism Example" src="images/4.png">
 
 ## Starting Page
@@ -62,6 +63,13 @@ Looking at the words surrounding "things", we see this point emphasized in certa
 <img alt="Selection Example" src="images/2.png">
 
 ## Multiple Transcript Selection
+For multiple transcript selection, you can batch select a group:
+
+Selecting a start element ->
+- **Windows**: _Shift+Click a bottom element_
+- **Mac / OS X**: _Command+Click a bottom element_
+And add individual episodes:
+- _Control+Click a particular element_
 <img alt="Multiple Select Example" src="images/3.png">
 
 
