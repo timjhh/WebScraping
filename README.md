@@ -117,8 +117,6 @@ const stopWords = [
 
 # Sources
 
-This project is powered by:
-
 *[jQuery](https://jquery.com/)
 
 *[D3.js](https://d3js.org/)
