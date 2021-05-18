@@ -66,8 +66,9 @@ Looking at the words surrounding "things", we see this point emphasized in certa
 
 
 For multiple transcript selection, you can select individual episodes:
-- _Control+Click separated elements_		
-Or batch select a group of elements:		
+- _Control+Click separated elements_					
+
+Or batch select a group of elements by first selecting a top element, then:		
 - **Windows**: _Shift+Click a bottom element_		
 - **Mac / OS X**: _Command+Click a bottom element_		
 
