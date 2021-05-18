@@ -63,13 +63,14 @@ Looking at the words surrounding "things", we see this point emphasized in certa
 <img alt="Selection Example" src="images/2.png">
 
 ## Multiple Transcript Selection
-For multiple transcript selection, you can batch select a group:
 
-Selecting a start element ->
-- **Windows**: _Shift+Click a bottom element_
-- **Mac / OS X**: _Command+Click a bottom element_
-And add individual episodes:
-- _Control+Click a particular element_
+
+For multiple transcript selection, you can select individual episodes:
+- _Control+Click separated elements_		
+Or batch select a group of elements:		
+- **Windows**: _Shift+Click a bottom element_		
+- **Mac / OS X**: _Command+Click a bottom element_		
+
 <img alt="Multiple Select Example" src="images/3.png">
 
 
