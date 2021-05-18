@@ -1,6 +1,8 @@
-# WebScraping
+# Philosophize This! Webscraping
 
-The Philosophize This! podcast(https://www.philosophizethis.org/) is an educational resource covering a wide range of topics including History, Sociology, Spirituality and Philosophy. Noticing the language used in certain topics, or by certain individuals made me wonder what keywords are used to describe each topic.
+The Philosophize This! podcast(https://www.philosophizethis.org/) is an educational resource covering a wide range of topics including(but not limited to) History, Sociology, Spirituality and Philosophy. Noticing the language used in certain topics, or by certain individuals made me wonder what keywords are used to describe each topic.
+
+How keywords come up to describe the Greek Hellenistic age? Can we use this to find a dialect for someone such as Epicurus?
 
 What words describe Eastern vs. Western philosophy? German vs. American Philosophy? Sociology vs. Economic Theory?
 
@@ -9,9 +11,28 @@ To learn more, I took the opportunity to practice web scraping and data visualiz
 This project visualizes the word frequencies from any combined(or single) number of podcast episodes. Clicking on any word reveals words used around it, giving a more qualitative
 description of that word.
 
+The algorithm is based around user interaction, running as follows:
+
+1. Query All Button is Pressed
+	* Filter for a list of URL links
+	* Distinguish transcipt links from episode links
+	* Pull the title from each link(if present) and associate with the transcript link
+	* Append all episode titles to the page
+2. Query Transcripts Button is Pressed
+	* Query the list of transcript links selected
+	* Pull all data from transcript pages, pull out main paragraphical content
+	* Scrub text to remove all punctuation, spacing, stop words, and symbols
+	* Generate word frequencies from a scrubbed list of paragraphs
+	* Generate bar chart of frequencies and add mouseover functionality
+	* Append chart, frequencies and stats to the page
+3. Word is Clicked from Frequency List
+	* Find all instances of given word in each transcript
+	* Take and check bounds for all indices within 3(for 3 words out)
+	* Find frequency of surrounding words and append to page
+
 # Examples
 
-## Hellenism Example
+## Hellenism Series
 Taken from the series on Hellenism, we can see that objective concepts like "things", "people", or "life" are tackled.
 
 Hellenism was defined by the struggle to find meaning and greater understanding from the power vacuum left after the death of Alexander the Great. There was an emphasis on the local accessibility of gods, and how they manifested in everyday situations. With the uncertainty of each day in an unstructured society, this sort of control and comfort certainly helped to alleviate the larger concerns of survival.
@@ -34,7 +55,8 @@ Looking at the words surrounding "things", we see this point emphasized in certa
 - "Stop Words" deemed irrelevant(the, and, or, I, etc.) that have been removed from the data for more menaingful results -
 
 ```javascript
-// Words to disclude from word count - taken from microsoft PowerBI-Visuals-WordCloud
+// Words to disclude from word count - originally taken from microsoft PowerBI-Visuals-WordCloud
+// Words continuously added to further specify analysis
 const stopWords = [ 
     "a", "amazon", "about", "above", "above", "across", "ad", "after", "afterwards", "again", "against", "all", "almost", 
     "alone", "along", "already", "also","although","always","am","among", "amongst", "amoungst", "amount",  

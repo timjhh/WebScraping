@@ -2,7 +2,8 @@
 const begin = "http://www.philosophizethis.org/sitemap.xml";
 
 
-// Words to disclude from word count - taken from microsoft PowerBI-Visuals-WordCloud
+// Words to disclude from word count - originally taken from microsoft PowerBI-Visuals-WordCloud
+// Words continuously added to further specify analysis
 const stopWords = [ 
     "a", "amazon", "about", "above", "above", "across", "ad", "after", "afterwards", "again", "against", "all", "almost", 
     "alone", "along", "already", "also","although","always","am","among", "amongst", "amoungst", "amount",  
