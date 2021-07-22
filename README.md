@@ -15,7 +15,7 @@
 
 The [Philosophize This!](https://www.philosophizethis.org/) podcast is an educational resource covering a wide range of topics including(but not limited to) History, Sociology, Spirituality and Philosophy. Noticing the language used in certain topics, or by certain individuals made me wonder what keywords are used to describe each topic.
 
-How keywords come up to describe the Greek Hellenistic age? Can we use this to find a dialect for someone such as Epicurus?
+What keywords come up to describe the Greek Hellenistic age? Can we use this to find a dialect for someone such as Epicurus?
 
 What words describe Eastern vs. Western philosophy? German vs. American Philosophy? Sociology vs. Economic Theory?
 
