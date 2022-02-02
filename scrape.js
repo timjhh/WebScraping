@@ -16,7 +16,7 @@ const stopWords = [
     "fill", "find", "fire", "first", "five", "for", "former", "formerly", "forty", "found", "four", "from", 
     "front", "full", "further", "get", "give", "go", "going", "had", "has", "hasnt", "have", "he", "hello", "hence", "her", 
     "here", "hereafter", "hereby", "herein", "hereupon", "hers", "herself", "him", "himself", "his", "how",
-    "however", "hundred", "i", "ie", "if", "i'll", "im", "i'm" , "in", "inc", "indeed", "interest", "into", "is", "it", "its", "it’s", "itself", "just",
+    "however", "hundred", "i", "ie", "if", "i'll", "im", "i'm" , "in", "inc", "indeed", "interest", "into", "is", "isnt", "it", "its", "it’s", "itself", "just",
     "keep", "last", "latter", "latterly", "least", "less", "let's", "like", "ltd", "made", "many", "may", "me", "meanwhile", 
     "might", "mill", "mine", "more", "moreover", "most", "mostly", "move", "much", "must", "my", "myself", 
     "name", "namely", "neither", "never", "nevertheless", "next", "nine", "no", "nobody", "none", "noone", 
@@ -156,9 +156,12 @@ function getEpisodeTitles(data) {
 
 	ttls.forEach(function(d) {
 		var title = d.split("-");
+
 		var description = title.slice(1).join("").trim(); // Include some titles with extra hyphens in their description, trim the whitespace too!
+		console.log(description)
 		if(description.length < 100 && description != "") { // Filters out ??? big descriptions ??? just don't take it out
-		 titles[parseInt(title[0].match(/[1-9]\d*|0\d+/g)[0])] = description; // index a regex matching of all numbers followed by the description
+		 titles[parseInt(title[0].match(/[1-9]\d*/g)[0])] = description; // index a regex matching of all numbers followed by the description
+			// /[1-9]\d*|0\d+/g
 		}
 		
 	});
@@ -306,15 +309,16 @@ function scrubParagraphs(data) {
 	var transcript = "";
 	data.forEach(function(tsc) {
 		tsc.forEach(function(d) {
-			var formatted = d
-			.replace(/[.]{3}/g, " ") // 3 dots usually indicate a space
-			.replace(/[.?!]/ig, " ") // In case the space was forgotten
-			//.replace(/[a-z][.?!][a-z]/ig, " ") // In case the space was forgotten
-			.replace(/[ ]['][a-z]|['][" ][ ]/ig, " ") // remove quoted text
-			.replace(/[/]/g, " ") // A slash usually indicates two words
-			.replace(/[\u2026]/g, " ") // casually remove the triple ellipse unicode symbol smh
-			.replace(/[.,"#'!?$%\^&\*\[\];:{}=><\-_~()“”\=\+]/g,'') // remove random formatting
-			.replace(/[0-9][a-z]*/ig, ''); // remove all numbers
+			// var formatted = d
+			// .replace(/[.]{3}/g, " ") // 3 dots usually indicate a space
+			// .replace(/[.?!]/ig, " ") // In case the space was forgotten
+			// //.replace(/[a-z][.?!][a-z]/ig, " ") // In case the space was forgotten
+			// .replace(/[ ]['][a-z]|['][" ][ ]/ig, " ") // remove quoted text
+			// .replace(/[/]/g, " ") // A slash usually indicates two words
+			// .replace(/[\u2026]/g, " ") // casually remove the triple ellipse unicode symbol smh
+			// .replace(/[.,"#'!?$%\^&\*\[\];:{}=><\-_~()“”\=\+]/g,'') // remove random formatting
+			// .replace(/[0-9][a-z]*/ig, ''); // remove all numbers
+			let formatted = d.replace(/[^(a-z)(A-Z)(\s)]+/g, '')
 
 			transcript = transcript + formatted.toLowerCase() + " ";
 		});
